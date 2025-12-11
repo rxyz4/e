@@ -2692,7 +2692,7 @@ local Module_Input = Module:create_textbox({
             })
         end
 
-        local char = lp.Character or lp.CharacterAdded:Wait()
+        local char = Players.LocalPlayer.Character or Players.LocalPlayer.CharacterAdded:Wait()
         local hum = char and char:FindFirstChildOfClass("Humanoid")
 
         if not hum then
