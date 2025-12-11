@@ -25,7 +25,7 @@ function convertStringToTable(inputString)
     local result = {}
     for value in string.gmatch(inputString, "([^,]+)") do
         local trimmedValue = value:match("^%s*(.-)%s*$")
-        tablein(result, trimmedValue)
+        table.insert(result, trimmedValue)
     end
 
     return result
@@ -45,16 +45,18 @@ local Lighting = cloneref(game:GetService('Lighting'))
 local Players = cloneref(game:GetService('Players'))
 local CoreGui = cloneref(game:GetService('CoreGui'))
 local Debris = cloneref(game:GetService('Debris'))
+local Workspace = cloneref(game:GetService("Workspace"))
+local InsertService = cloneref(game:GetService("InsertService"))
 
 local mouse = Players.LocalPlayer:GetMouse()
-local old_Allusive = CoreGui:FindFirstChild('Allusive')
+local old_Allusive = CoreGui:FindFirstChild('Zombies')
 
 if old_Allusive then
     Debris:AddItem(old_Allusive, 0)
 end
 
-if not isfolder("Allusive") then
-    makefolder("Allusive")
+if not isfolder("Zombie") then
+    makefolder("Zombie")
 end
 
 
@@ -283,7 +285,7 @@ local Config = setmetatable({
     save = function(self: any, file_name: any, config: any)
         local success_save, result = pcall(function()
             local flags = HttpService:JSONEncode(config)
-            writefile('Allusive/'..file_name..'.json', flags)
+            writefile('Zombiess/'..file_name..'.json', flags)
         end)
     
         if not success_save then
@@ -292,13 +294,13 @@ local Config = setmetatable({
     end,
     load = function(self: any, file_name: any, config: any)
         local success_load, result = pcall(function()
-            if not isfile('Allusive/'..file_name..'.json') then
+            if not isfile('Zombiess/'..file_name..'.json') then
                 self:save(file_name, config)
         
                 return
             end
         
-            local flags = readfile('Allusive/'..file_name..'.json')
+            local flags = readfile('Zombiess/'..file_name..'.json')
         
             if not flags then
                 self:save(file_name, config)
@@ -436,7 +438,7 @@ function Library.SendNotification(settings)
 
     -- Force the size to adjust after the text is fully loaded and wrapped
     task.spawn(function()
-        wait(0.1)  -- Allow text wrapping to finish
+        task.wait(0.1)  -- Allow text wrapping to finish
         -- Adjust inner frame size based on content
         local totalHeight = Title.TextBounds.Y + Body.TextBounds.Y + 10  -- Add padding
         InnerFrame.Size = UDim2.new(1, 0, 0, totalHeight)  -- Resize the inner frame
@@ -452,7 +454,7 @@ function Library.SendNotification(settings)
 
         -- Wait for the duration before tweening out
         local duration = settings.duration or 5  -- Default to 5 seconds if not provided
-        wait(duration)
+        task.wait(duration)
 
         -- Tween Out the Notification (inner frame) to the right side of the screen
         local tweenOut = TweenService:Create(InnerFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In), {
@@ -2647,3 +2649,72 @@ function Library:create_ui()
 
     return self
 end
+
+local main = Library.new()
+
+local Main = main:create_tab('Main', 'rbxassetid://76499042599127')
+
+local Module = Main:create_module({
+    title = "Skin Changer",
+    flag = "Outfit_Changer",
+    description = "Change your avatar",
+    section = "left",
+    callback = function(value: boolean)
+    end
+})
+
+local Module_Input = Module:create_textbox({
+    title = "Username",
+    placeholder = "type here...",
+    flag = "Module_Username",
+    callback = function(text: string)
+        local success, id_toCopy = pcall(function()
+            return Players:GetUserIdFromNameAsync(text)
+        end)
+
+        if not success or not id_toCopy then
+            Library.SendNotification({
+                title = "Error",
+                text = "failed to find user",
+                duration = 3
+            })
+        end
+
+        local success2, desc = pcall(function()
+            return Players:GetHumanoidDescriptionFromUserId(id_toCopy)
+        end)
+
+        if not success2 or not desc then
+            Library.SendNotification({
+                title = "Error",
+                text = "failed to get avatar description",
+                duration = 3
+            })
+        end
+
+        local char = lp.Character or lp.CharacterAdded:Wait()
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+        if not hum then
+            Library.SendNotification({
+                title = "Error",
+                text = "humanoid not found",
+                duration = 3
+            })
+        end
+
+        local ok, err = pcall(function()
+            hum:ApplyDescriptionClientServer(desc)
+        end)
+
+        if not ok then
+            Library.SendNotification({
+                title = "Error",
+                text = "Failed: " .. tostring(error),
+                duration = 3
+            })
+        end
+    end
+})
+
+main:load()
